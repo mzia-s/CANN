@@ -46,7 +46,7 @@ try:
 except ImportError:
 
     FASTA_PATH = Path(
-        "/mnt/home/ziamusha/Phylogenetics/NCBI/"
+        "/mnt/home/*************/NCBI/"
         "Yau2022_record_processed.fasta"
     )
 
