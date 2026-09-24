@@ -7,7 +7,7 @@ from pathlib import Path
 # ============================================================
 
 BASE_DIR = Path(
-    "/mnt/home/ziamusha/Phylogenetics/NCBI"
+    "/mnt/home/*************/NCBI"
 )
 
 CSV_PATH = (
@@ -16,16 +16,15 @@ CSV_PATH = (
 )
 
 PSRT_BASE = Path(
-    "/mnt/gs21/scratch/ziamusha/DeepLearning/Yau2022_features"
+    "/mnt/******************/Yau2022_features"
 )
 
 KMER_COUNT_ROOT = Path(
-    "/mnt/gs21/scratch/ziamusha/DeepLearning/"
-    "Yau2022_features/output_kmer/kmer_counts"
+    "/mnt/**********************/kmer_counts"
 )
 
 RESULT_DIR = Path(
-    "/mnt/home/ziamusha/Phylogenetics/DeepLearning/"
+    "/mnt/home/********************/"
     "5CV_NCBI2022_results"
 )
 
