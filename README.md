@@ -14,7 +14,7 @@ The main benchmarks use stratified five-fold cross-validation repeated over 30 r
 
 ## CANN Workflow
 
-[![Overview of the CANN workflow](figures/CANN_workflow.png)]
+![Overview of the CANN workflow](figures/CANN_workflow.png)]
 
 **Figure:** Overview of CANN, including sequence feature generation, independent CNN and Transformer training, consensus distance construction, and nearest-neighbor classification under repeated stratified five-fold cross-validation.
 
