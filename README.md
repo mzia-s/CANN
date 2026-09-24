@@ -1,7 +1,4 @@
 # CANN
-Commutative Algebra Neural Networks for Virus Classification
-
-# CANN
 
 Alignment-free viral family classification using persistent commutative-algebraic descriptors and neural representation learning.
 
