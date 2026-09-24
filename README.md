@@ -529,3 +529,10 @@ We acknowledge Dr. Faisal Suwayyid and collaborators for developing CAKR and mak
 The repository retains the earlier directory name `CAKL`; the published framework is named **CAKR**.
 
 We also retain the acknowledgment of [KmerTopology](https://github.com/hozumiyu/KmerTopology) by Yuta Hozumi included in the supplied `psrt.py`.
+
+## Citation
+
+If you use CANN, its code, or its results in your research,
+please cite our accompanying paper:
+
+[CITATION LINK]
