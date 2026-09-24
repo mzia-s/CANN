@@ -1,0 +1,7 @@
+numpy==1.26.4
+scipy==1.17.1
+pandas==2.3.0
+scikit-learn==1.7.0
+torch==2.1.2+cpu
+biopython==1.86
+gudhi==3.11.0
