@@ -11,7 +11,7 @@ Alignment-free viral family classification using commutative-algebraic descripto
 - [Repository Organization](#repository-organization)
 - [Data Sources and Availability](#data-sources-and-availability)
 - [Installation](#installation)
-- [Reproducing the Experiments](#reproducing-the-experiments)
+- [Reproducing the Main Benchmarks](#reproducing-the-main-benchmarks)
 - [Evaluation Protocol](#evaluation-protocol)
 - [Outputs](#outputs)
 - [Acknowledgments](#acknowledgments)
@@ -40,18 +40,18 @@ For k = 3, 4, and 5, persistent facet-number descriptors are evaluated at two fi
 
 For k = 6 and 7, conventional k-mer counts are generated and converted to relative frequencies by the data loader.
 
-| Feature block | k | Number of possible k-mers | Values per k-mer | Scalar features per genome |
+| Feature block | k | Possible k-mers | Values per k-mer | Scalar features |
 | --- | ---: | ---: | ---: | ---: |
 | Persistent facet descriptors | 3 | 64 | 2 | 128 |
 | Persistent facet descriptors | 4 | 256 | 2 | 512 |
 | Persistent facet descriptors | 5 | 1,024 | 2 | 2,048 |
 | k-mer frequencies | 6 | 4,096 | 1 | 4,096 |
 | k-mer frequencies | 7 | 16,384 | 1 | 16,384 |
-| **Total** | | | | **23,168** |
+| **Total per genome** | | | | **23,168** |
 
 The facet matrices have shapes `(64, 2)`, `(256, 2)`, and `(1024, 2)`. The k-mer composition vectors have lengths 4,096 and 16,384.
 
-Facet normalization is fitted separately within each cross-validation fold using only the training subset. The same transformation is applied to validation, reference, and test samples.
+Facet normalization is fitted separately within each cross-validation fold using only the training subset.
 
 ## Software Requirements
 
@@ -74,27 +74,26 @@ Operating system:
 Linux-5.15.0-187-generic-x86_64-with-glibc2.35
 ```
 
-The recorded PyTorch build uses the CPU. CUDA and a GPU are not required for the commands below.
+The recorded PyTorch build uses the CPU. CUDA and a GPU are not required.
+
+All instructions below use Python directly. Slurm and shell submission scripts are not required.
 
 ## Repository Organization
 
 | Location | Contents |
 | --- | --- |
-| `src/` | Feature generation, data processing, encoders, training, and evaluation code |
-| `datasets/NCBI2020/` | NCBI 2020 metadata and corresponding FASTA |
-| `datasets/NCBI2022/` | NCBI 2022 metadata and corresponding FASTA |
-| `datasets/NCBI2024/` | NCBI 2024 metadata and corresponding FASTA |
-| `datasets/NCBI2024_All/` | NCBI 2024 All metadata and corresponding FASTA |
+| `src/` | Feature generation, preprocessing, models, training, and evaluation code |
+| `datasets/` | CSV metadata for the four main benchmarks and the two NCBI 2026 datasets |
 | `figures/` | CANN workflow figure |
 | `requirements.txt` | Pinned Python package versions |
 | `README.md` | Installation and reproduction instructions |
 
-The following directories are created locally during execution:
+All dataset CSVs are stored directly in `datasets/`, without dataset-specific subfolders. Downloaded FASTA files should be placed in the same directory.
 
-| Generated location | Contents |
-| --- | --- |
-| `features/<dataset>/` | Feature arrays |
-| `outputs/<dataset>/` | Per-seed results and aggregate summary |
+Generated features and results are stored separately for each dataset:
+
+- `features/<dataset>/`
+- `outputs/<dataset>/`
 
 ### Source Files
 
@@ -104,7 +103,7 @@ The following directories are created locally during execution:
 | `src/psrt.py` | Persistent descriptor calculations |
 | `src/kmer_only_encoder.py` | Nucleotide k-mer counting |
 | `src/config.py` | Paths, feature settings, model settings, and cross-validation configuration |
-| `src/data.py` | Sequence and metadata preprocessing, feature loading, and normalization |
+| `src/data.py` | Data cleaning, feature loading, and normalization |
 | `src/dataset.py` | Datasets, balanced sampling, and data loaders |
 | `src/cnn.py` | CNN encoder |
 | `src/transformer.py` | Transformer encoder |
@@ -121,12 +120,19 @@ The genomic data supporting this study were obtained from the National Center fo
 
 Sequence records can be accessed and downloaded through:
 
-- [NCBI GenBank](https://www.ncbi.nlm.nih.gov/genbank/)
 - [NCBI Virus](https://www.ncbi.nlm.nih.gov/labs/virus/)
+- [NCBI Nucleotide](https://www.ncbi.nlm.nih.gov/nuccore/)
+- [NCBI GenBank](https://www.ncbi.nlm.nih.gov/genbank/)
 
-The metadata files identify the accession versions and viral family labels used for each dataset. Use the listed accession versions and the supplied family labels when reconstructing the benchmarks, because database sequences and taxonomic assignments may change over time.
+### Archived Benchmark Data
 
-### Dataset Files
+The curated data archive associated with the CAKR benchmark study is available on Zenodo:
+
+**[Data for CAKR: commutative algebra k-mer representations for genomics](https://doi.org/10.5281/zenodo.18757928)**
+
+Use the corresponding viral benchmark files from this archive and retain the original filenames listed below.
+
+### Main Benchmark Files
 
 | Dataset | Metadata CSV | Corresponding FASTA |
 | --- | --- | --- |
@@ -135,21 +141,14 @@ The metadata files identify the accession versions and viral family labels used 
 | NCBI 2024 | `NCBI_record_valid_nucleotide.csv` | `NCBI_record_valid_nucleotide.fasta` |
 | NCBI 2024 All | `NCBI_record_valid_count.csv` | `NCBI_record_valid_count.fasta` |
 
-Place each FASTA file beside its corresponding CSV in the appropriate subfolder of `datasets/`.
+For example, the NCBI 2022 files should be located at:
 
-The FASTA files are not included in the current repository upload because of their size. Obtain the corresponding sequences before running the workflow. For exact benchmark reproduction, use the original processed FASTA files when available.
+```text
+datasets/Yau2022_record_processed.csv
+datasets/Yau2022_record_processed.fasta
+```
 
-### Metadata Columns
-
-All four CSV files contain:
-
-- `Accession (version)`: genome accession including its version.
-- `Accession`: accession without the version suffix.
-- `Family`: viral family label used for classification.
-
-The NCBI 2020 and NCBI 2022 files additionally contain `Old Family`. The NCBI 2022 file also contains `Baltimore`. The classification target is always `Family`.
-
-### Dataset Sizes Before Pipeline Filtering
+The metadata files contain the following numbers of records before pipeline filtering:
 
 | Dataset | Genome records | Viral families |
 | --- | ---: | ---: |
@@ -158,9 +157,43 @@ The NCBI 2020 and NCBI 2022 files additionally contain `Old Family`. The NCBI 20
 | NCBI 2024 | 12,154 | 199 |
 | NCBI 2024 All | 13,645 | 209 |
 
-These counts describe the supplied metadata files before pipeline filtering. The code performs sequence cleaning, duplicate handling, and family-size filtering. The main benchmark configuration retains families with at least 15 genomes after preprocessing.
+The main classification pipeline performs sequence cleaning, duplicate handling, and family-size filtering. Families with at least 15 genomes after preprocessing are retained.
 
-Both the CSV and FASTA are required. The CSV supplies metadata and labels; the FASTA supplies genomic sequences.
+### NCBI 2026 and NCBI 2026 All
+
+The CSV metadata for NCBI 2026 and NCBI 2026 All are also provided directly in `datasets/`.
+
+Their corresponding genomic sequences can be downloaded from [NCBI Virus](https://www.ncbi.nlm.nih.gov/labs/virus/) or [NCBI Nucleotide](https://www.ncbi.nlm.nih.gov/nuccore/) using the accession.version identifiers in the CSV files. The processed FASTA files used in this study can also be provided by the authors upon request.
+
+The 2026 evaluations use distinct reference-coverage and evaluation protocols. The main-benchmark commands below do not reproduce those experiments simply by selecting a 2026 CSV; their corresponding evaluation scripts and settings are required.
+
+### Obtaining and Preparing FASTA Files
+
+FASTA files are not included in this GitHub repository because of their size.
+
+1. Obtain the corresponding benchmark sequences from the linked archive, download them from NCBI, or request the processed FASTA files from the authors.
+2. When downloading from NCBI, use the exact accession.version identifiers listed in the dataset CSV.
+3. Save the sequences in FASTA format.
+4. Place the FASTA directly in `datasets/`, beside its CSV.
+5. Use the same filename stem as the CSV, replacing `.csv` with `.fasta`.
+
+Retain the family labels supplied in the CSV files. Current NCBI taxonomic assignments may differ from those used in the original benchmarks.
+
+For exact reproduction, use the original processed sequence files whenever possible.
+
+### Metadata Columns
+
+The four main benchmark CSVs contain:
+
+- `Accession (version)`: genome accession including its version.
+- `Accession`: accession without the version suffix.
+- `Family`: viral family label used for classification.
+
+The NCBI 2020 and NCBI 2022 metadata additionally contain `Old Family`. NCBI 2022 also contains `Baltimore`.
+
+The classification target is `Family`.
+
+Both CSV metadata and FASTA sequences are required to run the supplied workflow.
 
 ## Installation
 
@@ -200,20 +233,23 @@ biopython==1.86
 gudhi==3.11.0
 ```
 
-Run all subsequent commands from the main repository directory with the environment activated.
+Run all subsequent commands from the main repository directory with this environment activated.
 
-## Reproducing the Experiments
+## Reproducing the Main Benchmarks
 
-### Step 1: Select and Configure the Dataset
+The following commands run the complete feature-generation and repeated cross-validation workflow directly, without Slurm submission scripts.
 
-Use the following path section in `src/config.py`. Preserve the remaining feature, model, and training settings.
+### Step 1: Configure the Dataset
+
+Use the following path section in `src/config.py`, preserving the remaining feature, model, and training settings:
 
 ```python
 from pathlib import Path
 
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 
-# Options: NCBI2020, NCBI2022, NCBI2024, NCBI2024_All
+# Main benchmark options:
+# NCBI2020, NCBI2022, NCBI2024, NCBI2024_All
 DATASET_NAME = "NCBI2022"
 
 DATASET_FILENAMES = {
@@ -223,7 +259,7 @@ DATASET_FILENAMES = {
     "NCBI2024_All": "NCBI_record_valid_count",
 }
 
-BASE_DIR = PROJECT_DIR / "datasets" / DATASET_NAME
+BASE_DIR = PROJECT_DIR / "datasets"
 FILE_STEM = DATASET_FILENAMES[DATASET_NAME]
 
 CSV_PATH = BASE_DIR / f"{FILE_STEM}.csv"
@@ -235,13 +271,13 @@ KMER_COUNT_ROOT = PSRT_BASE / "output_kmer" / "kmer_counts"
 RESULT_DIR = PROJECT_DIR / "outputs" / DATASET_NAME
 ```
 
-Change `DATASET_NAME` to select the benchmark.
+Only the four main benchmarks are included in this configuration mapping.
 
-Defining `FASTA_PATH` here overrides the original fallback path in `data.py`. The feature and result directories are separate for each dataset.
+Defining `FASTA_PATH` here overrides the original fallback path in `data.py`.
 
-### Step 2: Read the Selected Paths
+### Step 2: Read and Check the Selected Paths
 
-In a Bash terminal, read the configured paths:
+Run the following in Bash:
 
 ```bash
 FASTA_PATH=$(python -c \
@@ -250,10 +286,19 @@ FASTA_PATH=$(python -c \
 FEATURE_ROOT=$(python -c \
     "from src.config import PSRT_BASE; print(PSRT_BASE)")
 
-printf 'FASTA: %s\nFeatures: %s\n' "$FASTA_PATH" "$FEATURE_ROOT"
+python - <<'PY'
+from src.config import CSV_PATH, FASTA_PATH
+
+for path in (CSV_PATH, FASTA_PATH):
+    if not path.is_file():
+        raise FileNotFoundError(f"Required input file not found: {path}")
+    print(f"Found: {path}")
+PY
+
+printf 'Feature directory: %s\n' "$FEATURE_ROOT"
 ```
 
-Use the same terminal for the following feature-generation steps. Repeat this step whenever you change `DATASET_NAME`.
+Use the same terminal for the following feature-generation steps. Repeat this step after changing `DATASET_NAME`.
 
 ### Step 3: Count Usable Genomes
 
@@ -264,7 +309,7 @@ python src/cann.py \
     --out_root "$FEATURE_ROOT"
 ```
 
-The output contains:
+The output includes:
 
 ```text
 USABLE_GENOMES=N
@@ -272,19 +317,7 @@ USABLE_GENOMES=N
 
 Here, `N` is the number of cleaned unique genomes available for feature generation. Worker indices range from `0` through `N - 1`.
 
-### Step 4: Generate Features
-
-To generate features for the first cleaned unique genome:
-
-```bash
-python src/cann.py \
-    --mode worker \
-    --fasta "$FASTA_PATH" \
-    --out_root "$FEATURE_ROOT" \
-    --task_id 0
-```
-
-To generate features for every genome sequentially:
+### Step 4: Generate Features for All Genomes
 
 ```bash
 set -euo pipefail
@@ -311,15 +344,23 @@ for ((task_id = 0; task_id < genome_count; task_id++)); do
 done
 ```
 
-The loop includes task `0`, so running it after the single-genome example regenerates that genome's features.
+Each worker reloads the FASTA and processes one genome. This loop runs sequentially and may take substantial time for a full dataset.
 
-Each worker reloads the FASTA and processes one genome. Full-dataset generation can take substantial time. Independent task indices can also be scheduled on a computing cluster.
+To process a single genome, use its task index:
+
+```bash
+python src/cann.py \
+    --mode worker \
+    --fasta "$FASTA_PATH" \
+    --out_root "$FEATURE_ROOT" \
+    --task_id 0
+```
 
 Matching feature files are overwritten when generation is repeated.
 
 ### Step 5: Validate Generated Features
 
-After all workers finish:
+After all genomes have been processed:
 
 ```bash
 python src/cann.py \
@@ -328,37 +369,47 @@ python src/cann.py \
     --out_root "$FEATURE_ROOT"
 ```
 
-Resolve any missing or malformed feature files before training.
+Resolve missing or malformed feature files before training.
 
-The generated feature locations are:
+The generated files are organized beneath the selected feature root:
 
-| Relative location beneath the feature root | Contents |
+| Relative directory | Feature shape per genome |
 | --- | --- |
-| `output_psrt/all_features/k3/` | Facet arrays of shape `(64, 2)` |
-| `output_psrt/all_features/k4/` | Facet arrays of shape `(256, 2)` |
-| `output_psrt/all_features/k5/` | Facet arrays of shape `(1024, 2)` |
-| `output_kmer/kmer_counts/6/` | Count vectors of length 4,096 |
-| `output_kmer/kmer_counts/7/` | Count vectors of length 16,384 |
+| `output_psrt/all_features/k3/` | `(64, 2)` |
+| `output_psrt/all_features/k4/` | `(256, 2)` |
+| `output_psrt/all_features/k5/` | `(1024, 2)` |
+| `output_kmer/kmer_counts/6/` | `(4096,)` |
+| `output_kmer/kmer_counts/7/` | `(16384,)` |
 
 Facet filenames follow `<accession>_facet0.npy`. K-mer count filenames follow `<accession>.npy`.
 
-### Step 6: Run One Cross-Validation Seed
+### Step 6: Set the CPU Thread Configuration
+
+Use the thread settings from the original cross-validation launcher:
+
+```bash
+export OMP_NUM_THREADS=4
+export MKL_NUM_THREADS=4
+export OPENBLAS_NUM_THREADS=4
+```
+
+Set these variables before starting the training processes.
+
+### Step 7: Run Cross-Validation
+
+To run one seed containing all five outer folds:
 
 ```bash
 python src/5CV.py --seed-index 0
 ```
 
-This runs all five outer folds for the first configured seed.
-
 Seed indices are zero-based:
 
-- `--seed-index 0` uses seed 1.
-- `--seed-index 1` uses seed 2.
-- `--seed-index 29` uses seed 30.
+- Index `0` uses seed 1.
+- Index `1` uses seed 2.
+- Index `29` uses seed 30.
 
-Results are written to the configured `RESULT_DIR`. Progress is redirected to the corresponding per-seed text file.
-
-### Step 7: Run All 30 Seeds
+To run all 30 seeds sequentially:
 
 ```bash
 for seed_index in {0..29}; do
@@ -366,9 +417,11 @@ for seed_index in {0..29}; do
 done
 ```
 
-This runs 30 repetitions of five-fold cross-validation, totaling 150 outer-fold evaluations per dataset. Each outer fold trains the CNN and Transformer independently.
+This performs 150 outer-fold evaluations per dataset. Each fold trains the CNN and Transformer independently.
 
-The loop includes the first seed. If it was already run in Step 6, its result file will be overwritten.
+The full loop includes seed index `0`. If that seed was already run separately, its output is overwritten.
+
+Progress and results are redirected to per-seed text files in `RESULT_DIR`.
 
 ### Step 8: Aggregate Results
 
@@ -386,11 +439,11 @@ outputs/NCBI2022/final_results.txt
 
 The aggregation command expects all configured seed-result files.
 
-### Step 9: Repeat for the Other Datasets
+### Step 9: Repeat for the Other Main Benchmarks
 
 Change `DATASET_NAME` in `src/config.py` and repeat Steps 2–8.
 
-The available dataset identifiers are:
+Available selections:
 
 ```text
 NCBI2020
@@ -399,11 +452,11 @@ NCBI2024
 NCBI2024_All
 ```
 
-Keep each dataset's features and results in its own directory.
+CSV and FASTA inputs remain directly inside `datasets/`. Generated features and results are separated by dataset.
 
 ## Evaluation Protocol
 
-The default configuration uses:
+The default main-benchmark configuration uses:
 
 | Setting | Value |
 | --- | --- |
@@ -419,35 +472,25 @@ The default configuration uses:
 
 Within each outer fold:
 
-1. The development samples are divided into training and validation subsets.
+1. Development samples are divided into training and validation subsets.
 2. Facet normalization is fitted using only the training subset.
 3. CNN and Transformer encoders are trained independently.
 4. Validation performance is used for checkpoint selection.
 5. Training and validation samples form the reference collection.
-6. Held-out test genomes are classified using distances to that reference collection.
+6. Held-out test genomes are classified using distances to the reference collection.
 
 The held-out test fold is excluded from encoder training, normalization fitting, and checkpoint selection.
 
-K-mer count vectors are normalized per genome to obtain relative frequencies. Facet features use training-derived min-max normalization and are clipped to the interval `[0, 1]`.
+K-mer count vectors are normalized per genome to obtain relative frequencies. Facet features use training-derived min-max normalization and are clipped to `[0, 1]`.
 
-For each seed, held-out predictions are pooled across the five folds before calculating the seed-level metrics. The primary summary reports the mean and sample standard deviation across the 30 seed-level results.
+For each seed, held-out predictions are pooled across the five folds before calculating seed-level metrics. The primary summary reports the mean and sample standard deviation across the 30 seed-level results.
 
 ## Outputs
 
-Each dataset produces 30 per-seed result files:
+Each main benchmark produces:
 
-```text
-seed_01.txt
-seed_02.txt
-...
-seed_30.txt
-```
-
-Aggregation produces:
-
-```text
-final_results.txt
-```
+- `seed_01.txt` through `seed_30.txt`
+- `final_results.txt`
 
 The configured methods are:
 
@@ -470,9 +513,9 @@ The reported metrics are:
 
 Balanced accuracy and macro-recall are equivalent for this multiclass evaluation.
 
-Use the original dataset snapshots, family labels, preprocessing, model settings, seeds, and software environment when reproducing the benchmarks. Numerical results can vary across computing environments.
+For reproduction, retain the original sequence snapshots, family labels, preprocessing, feature settings, model settings, seeds, and software environment. Numerical results can vary across computing environments.
 
-This workflow covers the main four-dataset cross-validation experiments. The separate NCBI 2026 evaluations and feature-ablation experiments require their corresponding scripts.
+The commands above cover the four main cross-validation benchmarks. Separate NCBI 2026 evaluations and feature-ablation experiments require their corresponding evaluation scripts and settings.
 
 ## Acknowledgments
 
@@ -481,6 +524,7 @@ We acknowledge Dr. Faisal Suwayyid and collaborators for developing CAKR and mak
 - **Paper:** Suwayyid, F., Hozumi, Y., Zia, M., Wee, J., Feng, H., and Wei, G.-W. *CAKR: commutative algebra k-mer representations for genomics*. Nature Communications **17**, 9644 (2026).
 - **DOI:** https://doi.org/10.1038/s41467-026-76429-z
 - **Code:** https://github.com/FaisalSuwayyid/CAKL
+- **Data archive:** https://doi.org/10.5281/zenodo.18757928
 
 The repository retains the earlier directory name `CAKL`; the published framework is named **CAKR**.
 
